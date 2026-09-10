@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Plus, Trash2, ChevronUp, ChevronDown, Printer, RotateCcw } from "lucide-react";
 
 const STORAGE_KEY = "cv-maker-data-v1";
@@ -412,41 +412,8 @@ function ResumePaper({ data }) {
 // ---------- Main App ----------
 
 export default function App() {
-  const [data, setData] = useState(null);
-  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved
+  const [data, setData] = useState(() => sampleData());
   const [addMenuOpen, setAddMenuOpen] = useState(false);
-  const saveTimer = useRef(null);
-  const firstLoad = useRef(true);
-
-  // Load persisted data on mount (browser localStorage)
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      setData(raw ? JSON.parse(raw) : sampleData());
-    } catch {
-      setData(sampleData());
-    }
-  }, []);
-
-  // Debounced autosave to localStorage
-  useEffect(() => {
-    if (!data) return;
-    if (firstLoad.current) {
-      firstLoad.current = false;
-      return;
-    }
-    setSaveState("saving");
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        setSaveState("saved");
-      } catch {
-        setSaveState("idle");
-      }
-    }, 600);
-    return () => clearTimeout(saveTimer.current);
-  }, [data]);
 
   const updateContact = useCallback((field, value) => {
     setData((d) => ({ ...d, contact: { ...d.contact, [field]: value } }));
@@ -493,23 +460,8 @@ export default function App() {
 
   const resetAll = useCallback(() => {
     if (!window.confirm("Clear everything and start over? This can't be undone.")) return;
-    const fresh = blankData();
-    setData(fresh);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
-    } catch {
-      /* ignore */
-    }
+    setData(blankData());
   }, []);
-
-  if (!data) {
-    return (
-      <div className="cvm-app cvm-loading">
-        <style>{STYLES}</style>
-        <span>Loading your resume…</span>
-      </div>
-    );
-  }
 
   return (
     <div className="cvm-app">
@@ -518,9 +470,6 @@ export default function App() {
       <header className="cvm-header">
         <div className="cvm-brand">CV Maker</div>
         <div className="cvm-header-actions">
-          <span className="cvm-save-state">
-            {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : ""}
-          </span>
           <button type="button" className="cvm-ghost-btn" onClick={resetAll}>
             <RotateCcw size={14} /> Start over
           </button>
@@ -920,3 +869,4 @@ const STYLES = `
   .cvm-paper { box-shadow: none !important; margin: 0 auto !important; }
 }
 `;
+Remove autosave, always start fresh
