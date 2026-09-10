@@ -869,4 +869,4 @@ const STYLES = `
   .cvm-paper { box-shadow: none !important; margin: 0 auto !important; }
 }
 `;
-Remove autosave, always start fresh
+// Remove autosave, always start fresh
